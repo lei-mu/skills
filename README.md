@@ -1,4 +1,4 @@
-# lei-mu skills
+# luch skills
 
 一个面向 agent/runtime 的通用 Skills 仓库。
 
@@ -8,7 +8,50 @@
 - 可直接落地的脚本或配置
 - 适合公开分发与持续扩展的目录结构
 
-## 当前 Skills
+
+## 安装与使用
+
+本仓库按 Skills 目录组织，可用于后续通过支持 Skill 安装能力的工具进行分发和集成。
+
+### 方式 1：直接克隆仓库
+
+适合当前本地使用或自行挑选某个 Skill 集成。
+
+```bash
+git clone git@github.com:lei-mu/skills.git
+cd skills
+```
+
+如果你当前是直接本地使用，可按下面方式理解：
+
+1. 进入目标 Skill 目录查看 `SKILL.md`
+2. 配置该 Skill 所需环境变量
+3. 按文档中的脚本示例或函数示例调用
+
+### 方式 2：通过 `npx skills add` 安装
+
+适合后续通过 Skills 安装工具直接引入仓库中的 Skill。
+
+示例：
+
+安装技能
+
+```bash
+npx skills add lei-mu/skills
+```
+
+安装特定skills
+
+```bash
+npx skills add lei-mu/skills --skill <skill-name>
+```
+
+说明：
+- 具体命令格式取决于你使用的 Skills 安装工具版本
+- 如果安装工具支持从仓库中选择具体 Skill，建议优先选择目标 Skill，例如 `pushplus`
+- 安装完成后，仍需按对应 Skill 的 `SKILL.md` 配置环境变量
+
+## Skills list
 
 ### 1. pushplus
 
@@ -25,38 +68,6 @@
 - 群组消息
 - OpenAPI 查询与管理能力
 
-入口文档：
-- `skills/pushplus/SKILL.md`
-
-## 仓库结构
-
-```text
-skills/
-  pushplus/
-    SKILL.md
-    LICENSE
-    references/
-    scripts/
-```
-
-## 安装与使用
-
-本仓库按 Skills 目录组织，可用于后续通过支持 Skill 安装能力的工具进行分发和集成。
-
-如果你当前是直接本地使用，可按下面方式理解：
-
-1. 进入目标 Skill 目录查看 `SKILL.md`
-2. 配置该 Skill 所需环境变量
-3. 按文档中的脚本示例或函数示例调用
-
-## 环境变量说明
-
-不同 Skill 会在各自的 `SKILL.md` 中声明所需环境变量。
-
-以 `pushplus` 为例：
-- `PUSHPLUS_TOKEN`：基础消息发送
-- `PUSHPLUS_USER_TOKEN`：OpenAPI 用户 Token
-- `PUSHPLUS_SECRET_KEY`：OpenAPI SecretKey
 
 ## 设计目标
 
@@ -78,20 +89,3 @@ skills/
 ## 开源说明
 
 当前每个 Skill 可根据自身情况单独附带许可证。
-
-`pushplus` 当前使用：
-- MIT License
-
-## 贡献说明
-
-如果后续新增 Skill，建议保持以下约定：
-- 每个 Skill 独立目录
-- 提供 `SKILL.md`
-- 提供最小可运行脚本或实现
-- 说明环境变量、使用边界和风险操作
-
-## 后续规划
-
-当前仓库处于第一阶段，已公开第一个通知类 Skill：`pushplus`。
-
-后续会继续补充更多适合 agent/runtime 使用的通用 Skills。
