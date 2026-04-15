@@ -59,6 +59,14 @@ npx skills add lei-mu/skills --skill <skill-name>
 - 如果某个安装工具版本不支持 `--skill` 参数，请以该工具的实际文档为准
 - 安装完成后，仍需按对应 Skill 的 `SKILL.md` 配置环境变量
 
+### 方式 3：特定技能商店
+
+|              | 仓库路径 | clawhub.ai slug                     |
+| ------------ | -------- | ----------------------------------- |
+| **安装命令** |          | `npx clawhub@latest install <slug>` |
+|              | pushplus | pushplus                            |
+
+
 ## Skills list
 
 ### 1. pushplus
