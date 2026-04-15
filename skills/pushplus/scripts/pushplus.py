@@ -626,11 +626,11 @@ def main():
     token = args.token or get_token_from_env()
     
     if not token:
-        print("❌ 错误: 请提供 Token（通过 -t 参数或环境变量 PUSHPLUS_TOKEN 设置）", file=sys.stderr)
+        print("ERROR: 请提供 Token（通过 -t 参数或环境变量 PUSHPLUS_TOKEN 设置）", file=sys.stderr)
         return 1
     
     if not args.content:
-        print("❌ 错误: 请提供消息内容（通过 -c 参数）", file=sys.stderr)
+        print("ERROR: 请提供消息内容（通过 -c 参数）", file=sys.stderr)
         return 1
     
     try:
@@ -659,7 +659,7 @@ def main():
             
             # 检查返回结果
             if result.get('code') == 200:
-                print(f"✅ 多渠道消息推送请求已提交")
+                print("SUCCESS: 多渠道消息推送请求已提交")
                 data = result.get('data', [])
                 for item in data:
                     print(f"   [{item.get('channel')}] 流水号: {item.get('shortCode')}")
@@ -667,7 +667,7 @@ def main():
                     print(f"   响应: {json.dumps(result, ensure_ascii=False, indent=2)}")
                 return 0
             else:
-                print(f"❌ 多渠道消息推送失败")
+                print("ERROR: 多渠道消息推送失败")
                 print(f"   错误码: {result.get('code')}")
                 print(f"   错误信息: {result.get('msg')}")
                 if args.verbose:
@@ -693,13 +693,13 @@ def main():
             
             # 检查返回结果
             if result.get('code') == 200:
-                print(f"✅ 消息推送请求已提交")
+                print("SUCCESS: 消息推送请求已提交")
                 print(f"   消息流水号: {result.get('data')}")
                 if args.verbose:
                     print(f"   响应: {json.dumps(result, ensure_ascii=False, indent=2)}")
                 return 0
             else:
-                print(f"❌ 消息推送失败")
+                print("ERROR: 消息推送失败")
                 print(f"   错误码: {result.get('code')}")
                 print(f"   错误信息: {result.get('msg')}")
                 if args.verbose:
@@ -707,7 +707,7 @@ def main():
                 return 1
             
     except Exception as e:
-        print(f"❌ 请求异常: {str(e)}", file=sys.stderr)
+        print(f"ERROR: 请求异常: {str(e)}", file=sys.stderr)
         return 1
 
 
