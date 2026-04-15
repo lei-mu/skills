@@ -18,6 +18,13 @@
 适合当前本地使用或自行挑选某个 Skill 集成。
 
 ```bash
+git clone https://github.com/lei-mu/skills.git
+cd skills
+```
+
+如果你已配置 GitHub SSH，也可以使用：
+
+```bash
 git clone git@github.com:lei-mu/skills.git
 cd skills
 ```
@@ -47,8 +54,9 @@ npx skills add lei-mu/skills --skill <skill-name>
 ```
 
 说明：
-- 具体命令格式取决于你使用的 Skills 安装工具版本
+- 上述命令为公开分发场景下的示例写法，具体格式取决于你使用的 Skills 安装工具版本
 - 如果安装工具支持从仓库中选择具体 Skill，建议优先选择目标 Skill，例如 `pushplus`
+- 如果某个安装工具版本不支持 `--skill` 参数，请以该工具的实际文档为准
 - 安装完成后，仍需按对应 Skill 的 `SKILL.md` 配置环境变量
 
 ## Skills list
@@ -89,3 +97,6 @@ npx skills add lei-mu/skills --skill <skill-name>
 ## 开源说明
 
 当前每个 Skill 可根据自身情况单独附带许可证。
+
+当前已包含：
+- `pushplus`：MIT License
