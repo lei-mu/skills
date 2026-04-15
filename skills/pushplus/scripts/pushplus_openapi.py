@@ -16,7 +16,7 @@ import json
 import os
 import urllib.request
 import urllib.error
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any
 
 
 # OpenAPI 基础地址
@@ -25,6 +25,8 @@ OPENAPI_BASE_URL = "https://www.pushplus.plus/api"
 # 环境变量名
 ENV_USER_TOKEN = "PUSHPLUS_USER_TOKEN"
 ENV_SECRET_KEY = "PUSHPLUS_SECRET_KEY"
+MAX_PAGE_SIZE = 50
+MAX_TOPIC_QRCODE_SECOND = 2592000
 
 
 def get_access_key(user_token: Optional[str] = None, secret_key: Optional[str] = None) -> Dict[str, Any]:
@@ -61,6 +63,30 @@ def get_access_key(user_token: Optional[str] = None, secret_key: Optional[str] =
     return _make_request(url, payload)
 
 
+def _validate_non_empty_text(field_name: str, value: Optional[str]) -> str:
+    """校验必填文本参数"""
+    if value is None or not str(value).strip():
+        raise ValueError(f"{field_name} 不能为空")
+    return str(value).strip()
+
+
+def _validate_positive_int(field_name: str, value: int, minimum: int = 1) -> int:
+    """校验正整数参数"""
+    if not isinstance(value, int):
+        raise ValueError(f"{field_name} 必须为整数")
+    if value < minimum:
+        raise ValueError(f"{field_name} 必须大于等于 {minimum}")
+    return value
+
+
+def _validate_page_params(current: int, page_size: int) -> None:
+    """校验分页参数"""
+    _validate_positive_int("current", current)
+    _validate_positive_int("page_size", page_size)
+    if page_size > MAX_PAGE_SIZE:
+        raise ValueError(f"page_size 不能大于 {MAX_PAGE_SIZE}")
+
+
 # ==================== 消息接口 ====================
 
 def list_messages(access_key: str, current: int = 1, page_size: int = 20) -> Dict[str, Any]:
@@ -75,13 +101,16 @@ def list_messages(access_key: str, current: int = 1, page_size: int = 20) -> Dic
     Returns:
         消息列表数据
     """
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    _validate_page_params(current, page_size)
+
     url = f"{OPENAPI_BASE_URL}/open/message/list"
     payload = {
         "current": current,
         "pageSize": page_size
     }
     
-    return _make_request(url, payload, access_key)
+    return _make_request(url, payload, validated_access_key)
 
 
 def get_message_result(access_key: str, short_code: str) -> Dict[str, Any]:
@@ -104,9 +133,13 @@ def get_message_result(access_key: str, short_code: str) -> Dict[str, Any]:
         }
         status: 0-未投递，1-发送中，2-已发送，3-发送失败
     """
-    url = f"{OPENAPI_BASE_URL}/open/message/sendMessageResult?shortCode={short_code}"
-    
-    return _make_request(url, method="GET", access_key=access_key)
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    validated_short_code = _validate_non_empty_text("short_code", short_code)
+    return _make_request(
+        f"{OPENAPI_BASE_URL}/open/message/sendMessageResult?shortCode={validated_short_code}",
+        method="GET",
+        access_key=validated_access_key
+    )
 
 
 def delete_message(access_key: str, short_code: str) -> Dict[str, Any]:
@@ -126,9 +159,11 @@ def delete_message(access_key: str, short_code: str) -> Dict[str, Any]:
             "data": "删除成功"
         }
     """
-    url = f"{OPENAPI_BASE_URL}/open/message/deleteMessage?shortCode={short_code}"
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    validated_short_code = _validate_non_empty_text("short_code", short_code)
+    url = f"{OPENAPI_BASE_URL}/open/message/deleteMessage?shortCode={validated_short_code}"
     
-    return _make_request(url, method="DELETE", access_key=access_key)
+    return _make_request(url, method="DELETE", access_key=validated_access_key)
 
 
 # ==================== 用户接口 ====================
@@ -149,7 +184,8 @@ def get_user_token(access_key: str) -> Dict[str, Any]:
     """
     url = f"{OPENAPI_BASE_URL}/open/user/token"
     
-    return _make_request(url, method="GET", access_key=access_key)
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    return _make_request(url, method="GET", access_key=validated_access_key)
 
 
 def get_user_info(access_key: str) -> Dict[str, Any]:
@@ -179,7 +215,8 @@ def get_user_info(access_key: str) -> Dict[str, Any]:
     """
     url = f"{OPENAPI_BASE_URL}/open/user/myInfo"
     
-    return _make_request(url, method="GET", access_key=access_key)
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    return _make_request(url, method="GET", access_key=validated_access_key)
 
 
 def get_limit_time(access_key: str) -> Dict[str, Any]:
@@ -202,7 +239,8 @@ def get_limit_time(access_key: str) -> Dict[str, Any]:
     """
     url = f"{OPENAPI_BASE_URL}/open/user/userLimitTime"
     
-    return _make_request(url, method="GET", access_key=access_key)
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    return _make_request(url, method="GET", access_key=validated_access_key)
 
 
 def get_send_count(access_key: str) -> Dict[str, Any]:
@@ -226,7 +264,8 @@ def get_send_count(access_key: str) -> Dict[str, Any]:
     """
     url = f"{OPENAPI_BASE_URL}/open/user/sendCount"
     
-    return _make_request(url, method="GET", access_key=access_key)
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    return _make_request(url, method="GET", access_key=validated_access_key)
 
 
 # ==================== 消息Token接口 ====================
@@ -243,13 +282,16 @@ def list_tokens(access_key: str, current: int = 1, page_size: int = 20) -> Dict[
     Returns:
         消息 Token 列表
     """
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    _validate_page_params(current, page_size)
+
     url = f"{OPENAPI_BASE_URL}/open/token/list"
     payload = {
         "current": current,
         "pageSize": page_size
     }
     
-    return _make_request(url, payload, access_key)
+    return _make_request(url, payload, validated_access_key)
 
 
 def add_token(access_key: str, name: str, expire_time: Optional[str] = None) -> Dict[str, Any]:
@@ -268,14 +310,16 @@ def add_token(access_key: str, name: str, expire_time: Optional[str] = None) -> 
             "data": "837******46e2"  # 新建的消息 Token
         }
     """
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    validated_name = _validate_non_empty_text("name", name)
     url = f"{OPENAPI_BASE_URL}/open/token/add"
     payload = {
-        "name": name
+        "name": validated_name
     }
     if expire_time:
         payload["expireTime"] = expire_time
     
-    return _make_request(url, payload, access_key)
+    return _make_request(url, payload, validated_access_key)
 
 
 def edit_token(access_key: str, token_id: int, name: str, expire_time: Optional[str] = None) -> Dict[str, Any]:
@@ -295,15 +339,18 @@ def edit_token(access_key: str, token_id: int, name: str, expire_time: Optional[
             "data": "修改成功"
         }
     """
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    validated_token_id = _validate_positive_int("token_id", token_id)
+    validated_name = _validate_non_empty_text("name", name)
     url = f"{OPENAPI_BASE_URL}/open/token/edit"
     payload = {
-        "id": token_id,
-        "name": name
+        "id": validated_token_id,
+        "name": validated_name
     }
     if expire_time:
         payload["expireTime"] = expire_time
     
-    return _make_request(url, payload, access_key)
+    return _make_request(url, payload, validated_access_key)
 
 
 def delete_token(access_key: str, token_id: int) -> Dict[str, Any]:
@@ -321,9 +368,11 @@ def delete_token(access_key: str, token_id: int) -> Dict[str, Any]:
             "data": "删除成功"
         }
     """
-    url = f"{OPENAPI_BASE_URL}/open/token/deleteToken?id={token_id}"
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    validated_token_id = _validate_positive_int("token_id", token_id)
+    url = f"{OPENAPI_BASE_URL}/open/token/deleteToken?id={validated_token_id}"
     
-    return _make_request(url, method="DELETE", access_key=access_key)
+    return _make_request(url, method="DELETE", access_key=validated_access_key)
 
 
 # ==================== 群组接口 ====================
@@ -341,6 +390,11 @@ def list_topics(access_key: str, topic_type: int = 0, current: int = 1, page_siz
     Returns:
         群组列表
     """
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    _validate_page_params(current, page_size)
+    if topic_type not in (0, 1):
+        raise ValueError("topic_type 仅支持 0（我创建的）或 1（我加入的）")
+
     url = f"{OPENAPI_BASE_URL}/open/topic/list"
     payload = {
         "current": current,
@@ -350,7 +404,7 @@ def list_topics(access_key: str, topic_type: int = 0, current: int = 1, page_siz
         }
     }
     
-    return _make_request(url, payload, access_key)
+    return _make_request(url, payload, validated_access_key)
 
 
 def get_topic_detail(access_key: str, topic_id: int) -> Dict[str, Any]:
@@ -364,9 +418,11 @@ def get_topic_detail(access_key: str, topic_id: int) -> Dict[str, Any]:
     Returns:
         群组详情
     """
-    url = f"{OPENAPI_BASE_URL}/open/topic/detail?topicId={topic_id}"
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    validated_topic_id = _validate_positive_int("topic_id", topic_id)
+    url = f"{OPENAPI_BASE_URL}/open/topic/detail?topicId={validated_topic_id}"
     
-    return _make_request(url, method="GET", access_key=access_key)
+    return _make_request(url, method="GET", access_key=validated_access_key)
 
 
 def add_topic(
@@ -397,19 +453,24 @@ def add_topic(
             "data": 2  # 新建群组的群组编号
         }
     """
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    validated_topic_code = _validate_non_empty_text("topic_code", topic_code)
+    validated_topic_name = _validate_non_empty_text("topic_name", topic_name)
+    validated_contact = _validate_non_empty_text("contact", contact)
+    validated_introduction = _validate_non_empty_text("introduction", introduction)
     url = f"{OPENAPI_BASE_URL}/open/topic/add"
     payload = {
-        "topicCode": topic_code,
-        "topicName": topic_name,
-        "contact": contact,
-        "introduction": introduction
+        "topicCode": validated_topic_code,
+        "topicName": validated_topic_name,
+        "contact": validated_contact,
+        "introduction": validated_introduction
     }
     if receipt_message:
         payload["receiptMessage"] = receipt_message
     if app_id:
         payload["appId"] = app_id
     
-    return _make_request(url, payload, access_key)
+    return _make_request(url, payload, validated_access_key)
 
 
 def get_topic_qrcode(
@@ -437,9 +498,18 @@ def get_topic_qrcode(
             }
         }
     """
-    url = f"{OPENAPI_BASE_URL}/open/topic/qrCode?topicId={topic_id}&second={second}&scanCount={scan_count}"
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    validated_topic_id = _validate_positive_int("topic_id", topic_id)
+    validated_second = _validate_positive_int("second", second)
+    if validated_second > MAX_TOPIC_QRCODE_SECOND:
+        raise ValueError(f"second 不能大于 {MAX_TOPIC_QRCODE_SECOND}")
+    if not isinstance(scan_count, int):
+        raise ValueError("scan_count 必须为整数")
+    if scan_count != -1 and not 1 <= scan_count <= 999:
+        raise ValueError("scan_count 仅支持 -1 或 1-999")
+    url = f"{OPENAPI_BASE_URL}/open/topic/qrCode?topicId={validated_topic_id}&second={validated_second}&scanCount={scan_count}"
     
-    return _make_request(url, method="GET", access_key=access_key)
+    return _make_request(url, method="GET", access_key=validated_access_key)
 
 
 def exit_topic(access_key: str, topic_id: int) -> Dict[str, Any]:
@@ -457,9 +527,11 @@ def exit_topic(access_key: str, topic_id: int) -> Dict[str, Any]:
             "data": "退订成功"
         }
     """
-    url = f"{OPENAPI_BASE_URL}/open/topic/exitTopic?topicId={topic_id}"
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    validated_topic_id = _validate_positive_int("topic_id", topic_id)
+    url = f"{OPENAPI_BASE_URL}/open/topic/exitTopic?topicId={validated_topic_id}"
     
-    return _make_request(url, method="GET", access_key=access_key)
+    return _make_request(url, method="GET", access_key=validated_access_key)
 
 
 def delete_topic(access_key: str, topic_id: int) -> Dict[str, Any]:
@@ -477,9 +549,11 @@ def delete_topic(access_key: str, topic_id: int) -> Dict[str, Any]:
             "data": "群组删除成功"
         }
     """
-    url = f"{OPENAPI_BASE_URL}/open/topic/delete?topicId={topic_id}"
+    validated_access_key = _validate_non_empty_text("access_key", access_key)
+    validated_topic_id = _validate_positive_int("topic_id", topic_id)
+    url = f"{OPENAPI_BASE_URL}/open/topic/delete?topicId={validated_topic_id}"
     
-    return _make_request(url, method="GET", access_key=access_key)
+    return _make_request(url, method="GET", access_key=validated_access_key)
 
 
 # ==================== 内部工具函数 ====================

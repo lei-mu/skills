@@ -13,7 +13,7 @@ import sys
 import os
 import urllib.request
 import urllib.error
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any, List
 
 
 # API 基础地址
@@ -22,6 +22,8 @@ API_BATCH_URL = "https://www.pushplus.plus/batchSend"
 
 # 环境变量名
 ENV_TOKEN = "PUSHPLUS_TOKEN"
+VALID_TEMPLATES = {"html", "txt", "json", "markdown", "cloudMonitor", "jenkins", "route", "pay"}
+VALID_CHANNELS = {"wechat", "webhook", "cp", "mail", "sms", "extension", "voice", "app"}
 
 
 def get_token_from_env() -> Optional[str]:
@@ -32,6 +34,48 @@ def get_token_from_env() -> Optional[str]:
         Token 字符串或 None
     """
     return os.environ.get(ENV_TOKEN)
+
+
+def _validate_non_empty_text(field_name: str, value: Optional[str]) -> str:
+    """校验必填文本参数"""
+    if value is None or not str(value).strip():
+        raise ValueError(f"{field_name} 不能为空")
+    return str(value).strip()
+
+
+def _validate_template(template: str) -> str:
+    """校验模板类型"""
+    normalized_template = _validate_non_empty_text("template", template)
+    if normalized_template not in VALID_TEMPLATES:
+        raise ValueError(f"template 不合法，可选值: {', '.join(sorted(VALID_TEMPLATES))}")
+    return normalized_template
+
+
+def _validate_channel(channel: str) -> str:
+    """校验单渠道类型"""
+    normalized_channel = _validate_non_empty_text("channel", channel)
+    if normalized_channel not in VALID_CHANNELS:
+        raise ValueError(f"channel 不合法，可选值: {', '.join(sorted(VALID_CHANNELS))}")
+    return normalized_channel
+
+
+def _validate_channels(channels: List[str]) -> List[str]:
+    """校验多渠道参数"""
+    if not channels:
+        raise ValueError("channels 不能为空列表")
+
+    normalized_channels = []
+    for channel in channels:
+        normalized_channels.append(_validate_channel(channel))
+    return normalized_channels
+
+
+def _validate_options_length(channels: List[str], options: Optional[List[str]]) -> None:
+    """校验多渠道配置参数数量"""
+    if options is None:
+        return
+    if len(options) != len(channels):
+        raise ValueError("options 数量必须与 channels 数量一致；若某个渠道无需参数，请保留空位")
 
 
 def send_message(
@@ -70,12 +114,17 @@ def send_message(
     Returns:
         API 返回的 JSON 数据
     """
+    normalized_token = _validate_non_empty_text("token", token)
+    normalized_content = _validate_non_empty_text("content", content)
+    normalized_template = _validate_template(template)
+    normalized_channel = _validate_channel(channel)
+
     # 构建请求数据
     payload = {
-        "token": token,
-        "content": content,
-        "template": template,
-        "channel": channel
+        "token": normalized_token,
+        "content": normalized_content,
+        "template": normalized_template,
+        "channel": normalized_channel
     }
     
     if title:
@@ -174,12 +223,18 @@ def send_batch_message(
     Returns:
         API 返回的 JSON 数据，包含各渠道的消息流水号
     """
+    normalized_token = _validate_non_empty_text("token", token)
+    normalized_content = _validate_non_empty_text("content", content)
+    normalized_template = _validate_template(template)
+    normalized_channels = _validate_channels(channels)
+    _validate_options_length(normalized_channels, options)
+
     # 构建请求数据
     payload = {
-        "token": token,
-        "content": content,
-        "template": template,
-        "channel": ",".join(channels)
+        "token": normalized_token,
+        "content": normalized_content,
+        "template": normalized_template,
+        "channel": ",".join(normalized_channels)
     }
     
     if title:
