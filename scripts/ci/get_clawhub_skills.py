@@ -48,7 +48,9 @@ def parse_frontmatter(skill_file_path: str) -> dict:
     frontmatter_lines = lines[1:end_index]
     data = {}
     for line in frontmatter_lines:
-        match = re.match(r"^\s*([A-Za-z0-9_-]+)\s*:\s*(.+?)\s*$", line)
+        if line.startswith((" ", "\t", "-")):
+            continue
+        match = re.match(r"^([A-Za-z0-9_-]+)\s*:\s*(.+?)\s*$", line)
         if match:
             data[match.group(1)] = match.group(2).strip()
 
@@ -109,15 +111,24 @@ def load_skills(config_path: str, skill_slug: str, expected_version: str) -> dic
         if not skill_dir.is_dir():
             raise RuntimeError(f"Skill 目录不存在: {source}")
 
-        slug = (item.get("slug") or skill_dir.name).strip()
         skill_file = skill_dir / "SKILL.md"
         metadata = parse_frontmatter(str(skill_file))
+        skill_name = metadata["name"]
+        slug = (item.get("slug") or skill_name or skill_dir.name).strip()
+        display_name = (item.get("name") or skill_name).strip()
+
+        if item.get("slug") and slug != skill_name:
+            raise RuntimeError(
+                f"配置中的 slug 必须与 SKILL.md 的 name 一致: source={source}, slug={slug}, skillName={skill_name}"
+            )
+
         result_skills.append(
             {
                 "slug": slug,
                 "source": source.replace("\\", "/"),
                 "skillFile": str(skill_file).replace("\\", "/"),
-                "name": metadata["name"],
+                "skillName": skill_name,
+                "name": display_name,
                 "version": metadata["version"],
                 "description": metadata["description"],
                 "tags": metadata["tags"],
