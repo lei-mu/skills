@@ -3,8 +3,8 @@ $ErrorActionPreference = "Stop"
 
 param(
     [string]$ConfigPath = "clawhub/skills.publish.json",
-    [string]$SkillSlug,
-    [string]$ExpectedVersion,
+    [string]$SkillSlug = "",
+    [string]$ExpectedVersion = "",
     [string]$Changelog = "",
     [switch]$DryRun
 )
