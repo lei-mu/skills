@@ -5,7 +5,7 @@ description: PushPlus(推送加)消息推送服务，支持微信、邮件、短
 author: luch
 version: 1.0.2
 category: notification
-changelog: "更新skill.md 文件"
+changelog: 更新skill.md 文件
 tags: [pushplus, notification, wechat, email, webhook, dingtalk, feishu, sms]
 env:
   - name: PUSHPLUS_TOKEN
