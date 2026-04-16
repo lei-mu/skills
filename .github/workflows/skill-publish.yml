@@ -39,36 +39,34 @@ jobs:
     steps:
       - name: Resolve Publish Inputs
         id: resolve
-        shell: pwsh
+        shell: bash
         run: |
-          $eventName = "${{ github.event_name }}"
-          $tagName = "${{ github.ref_name }}"
-          $inputSkillSlug = "${{ inputs.skill_slug }}"
-          $inputExpectedVersion = "${{ inputs.expected_version }}"
-          $inputChangelog = "${{ inputs.changelog }}"
-          $inputDryRun = "${{ inputs.dry_run }}"
+          event_name="${{ github.event_name }}"
+          tag_name="${{ github.ref_name }}"
+          resolved_skill_slug="${{ inputs.skill_slug }}"
+          resolved_expected_version="${{ inputs.expected_version }}"
+          resolved_changelog="${{ inputs.changelog }}"
+          resolved_dry_run="${{ inputs.dry_run }}"
 
-          $resolvedSkillSlug = $inputSkillSlug
-          $resolvedExpectedVersion = $inputExpectedVersion
-          $resolvedChangelog = $inputChangelog
-          $resolvedDryRun = $inputDryRun
+          if [[ "$event_name" == "push" ]]; then
+            if [[ ! "$tag_name" =~ ^skill-(.+)-v([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$ ]]; then
+              echo "非法 tag 格式: $tag_name。期望格式: skill-<slug>-v<version>" >&2
+              exit 1
+            fi
 
-          if ($eventName -eq "push") {
-            if ($tagName -notmatch '^skill-(.+)-v(\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?(?:\+[0-9A-Za-z\.-]+)?)$') {
-              throw "非法 tag 格式: $tagName。期望格式: skill-<slug>-v<version>"
-            }
+            resolved_skill_slug="${BASH_REMATCH[1]}"
+            resolved_expected_version="${BASH_REMATCH[2]}"
+            resolved_dry_run="false"
+          fi
 
-            $resolvedSkillSlug = $Matches[1]
-            $resolvedExpectedVersion = $Matches[2]
-            $resolvedDryRun = "false"
-          }
-
-          "skill_slug=$resolvedSkillSlug" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "expected_version=$resolvedExpectedVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "dry_run=$resolvedDryRun" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "changelog<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          $resolvedChangelog | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          {
+            echo "skill_slug=$resolved_skill_slug"
+            echo "expected_version=$resolved_expected_version"
+            echo "dry_run=$resolved_dry_run"
+            echo "changelog<<EOF"
+            echo "$resolved_changelog"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
   publish:
     runs-on: ubuntu-latest
@@ -87,21 +85,26 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Validate Skill Metadata
-        shell: pwsh
+        shell: bash
         run: |
-          ./scripts/ci/Get-ClawHubSkills.ps1 `
-            -ConfigPath "clawhub/skills.publish.json" `
-            -SkillSlug "${{ needs.prepare.outputs.skill_slug }}" `
-            -ExpectedVersion "${{ needs.prepare.outputs.expected_version }}" `
-            -JsonOutput | Out-Host
+          python ./scripts/ci/get_clawhub_skills.py \
+            --config-path "clawhub/skills.publish.json" \
+            --skill-slug "${{ needs.prepare.outputs.skill_slug }}" \
+            --expected-version "${{ needs.prepare.outputs.expected_version }}" \
+            --json-output
 
       - name: Publish Skill To ClawHub
-        shell: pwsh
+        shell: bash
         run: |
-          ./scripts/ci/Publish-ClawHubSkills.ps1 `
-            -ConfigPath "clawhub/skills.publish.json" `
-            -SkillSlug "${{ needs.prepare.outputs.skill_slug }}" `
-            -ExpectedVersion "${{ needs.prepare.outputs.expected_version }}" `
-            -Changelog "${{ needs.prepare.outputs.changelog }}" `
-            -DryRun:${{ needs.prepare.outputs.dry_run }}
+          python ./scripts/ci/publish_clawhub_skills.py \
+            --config-path "clawhub/skills.publish.json" \
+            --skill-slug "${{ needs.prepare.outputs.skill_slug }}" \
+            --expected-version "${{ needs.prepare.outputs.expected_version }}" \
+            --changelog "${{ needs.prepare.outputs.changelog }}" \
+            ${{ needs.prepare.outputs.dry_run == 'true' && '--dry-run' || '' }}

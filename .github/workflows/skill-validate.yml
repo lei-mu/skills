@@ -16,7 +16,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Validate ClawHub Publish Config
-        shell: pwsh
+        shell: bash
         run: |
-          ./scripts/ci/Get-ClawHubSkills.ps1 -ConfigPath "clawhub/skills.publish.json" -JsonOutput | Out-Host
+          python ./scripts/ci/get_clawhub_skills.py --config-path "clawhub/skills.publish.json" --json-output
