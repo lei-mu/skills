@@ -1,12 +1,12 @@
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
-
 param(
     [string]$ConfigPath = "clawhub/skills.publish.json",
     [string]$SkillSlug = "",
     [string]$ExpectedVersion = "",
     [switch]$JsonOutput
 )
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
 function Read-Utf8Text {
     param(

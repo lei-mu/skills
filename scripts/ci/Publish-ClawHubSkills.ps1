@@ -1,6 +1,3 @@
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
-
 param(
     [string]$ConfigPath = "clawhub/skills.publish.json",
     [string]$SkillSlug = "",
@@ -8,6 +5,9 @@ param(
     [string]$Changelog = "",
     [switch]$DryRun
 )
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
 if ([string]::IsNullOrWhiteSpace($env:CLAWHUB_TOKEN)) {
     throw "缺少环境变量 CLAWHUB_TOKEN，无法执行 ClawHub 发布。"
