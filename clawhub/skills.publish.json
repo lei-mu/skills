@@ -1,0 +1,9 @@
+{
+  "skills": [
+    {
+      "source": "skills/pushplus",
+      "slug": "pushplus",
+      "publish": true
+    }
+  ]
+}

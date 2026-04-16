@@ -1,0 +1,96 @@
+name: Skill Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      skill_slug:
+        description: "要发布的 skill slug，留空则发布配置中所有启用项"
+        required: false
+        type: string
+      expected_version:
+        description: "期望发布的版本号，留空则以 SKILL.md 为准"
+        required: false
+        type: string
+      changelog:
+        description: "可选发布说明"
+        required: false
+        type: string
+  push:
+    tags:
+      - "skill-*-v*"
+
+concurrency:
+  group: clawhub-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      skill_slug: ${{ steps.resolve.outputs.skill_slug }}
+      expected_version: ${{ steps.resolve.outputs.expected_version }}
+      changelog: ${{ steps.resolve.outputs.changelog }}
+    steps:
+      - name: Resolve Publish Inputs
+        id: resolve
+        shell: pwsh
+        run: |
+          $eventName = "${{ github.event_name }}"
+          $tagName = "${{ github.ref_name }}"
+          $inputSkillSlug = "${{ inputs.skill_slug }}"
+          $inputExpectedVersion = "${{ inputs.expected_version }}"
+          $inputChangelog = "${{ inputs.changelog }}"
+
+          $resolvedSkillSlug = $inputSkillSlug
+          $resolvedExpectedVersion = $inputExpectedVersion
+          $resolvedChangelog = $inputChangelog
+
+          if ($eventName -eq "push") {
+            if ($tagName -notmatch '^skill-(.+)-v(\d+\.\d+\.\d+(?:-[0-9A-Za-z\.-]+)?(?:\+[0-9A-Za-z\.-]+)?)$') {
+              throw "非法 tag 格式: $tagName。期望格式: skill-<slug>-v<version>"
+            }
+
+            $resolvedSkillSlug = $Matches[1]
+            $resolvedExpectedVersion = $Matches[2]
+          }
+
+          "skill_slug=$resolvedSkillSlug" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "expected_version=$resolvedExpectedVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "changelog<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          $resolvedChangelog | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+  publish:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+    permissions:
+      contents: read
+    env:
+      CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate Skill Metadata
+        shell: pwsh
+        run: |
+          ./scripts/ci/Get-ClawHubSkills.ps1 `
+            -ConfigPath "clawhub/skills.publish.json" `
+            -SkillSlug "${{ needs.prepare.outputs.skill_slug }}" `
+            -ExpectedVersion "${{ needs.prepare.outputs.expected_version }}" `
+            -JsonOutput | Out-Host
+
+      - name: Publish Skill To ClawHub
+        shell: pwsh
+        run: |
+          ./scripts/ci/Publish-ClawHubSkills.ps1 `
+            -ConfigPath "clawhub/skills.publish.json" `
+            -SkillSlug "${{ needs.prepare.outputs.skill_slug }}" `
+            -ExpectedVersion "${{ needs.prepare.outputs.expected_version }}" `
+            -Changelog "${{ needs.prepare.outputs.changelog }}"

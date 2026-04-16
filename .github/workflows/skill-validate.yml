@@ -1,0 +1,22 @@
+name: Skill Validate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate ClawHub Publish Config
+        shell: pwsh
+        run: |
+          ./scripts/ci/Get-ClawHubSkills.ps1 -ConfigPath "clawhub/skills.publish.json" -JsonOutput | Out-Host
