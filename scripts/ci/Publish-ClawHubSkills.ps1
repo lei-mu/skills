@@ -5,7 +5,8 @@ param(
     [string]$ConfigPath = "clawhub/skills.publish.json",
     [string]$SkillSlug,
     [string]$ExpectedVersion,
-    [string]$Changelog = ""
+    [string]$Changelog = "",
+    [switch]$DryRun
 )
 
 if ([string]::IsNullOrWhiteSpace($env:CLAWHUB_TOKEN)) {
@@ -24,6 +25,10 @@ Write-Host "开始登录 ClawHub CLI..."
 & npx --yes clawhub@latest login --token $env:CLAWHUB_TOKEN --no-browser
 if ($LASTEXITCODE -ne 0) {
     throw "ClawHub CLI 登录失败。"
+}
+
+if ($DryRun) {
+    Write-Host "当前为 dry-run 模式：会执行登录、元数据校验和远端版本探测，但不会真实发布。"
 }
 
 $publishResults = New-Object System.Collections.Generic.List[object]
@@ -46,6 +51,17 @@ foreach ($skill in $resolvedSkills.skills) {
                 version = $version
                 status  = "skipped"
                 reason  = "version_exists"
+            })
+        continue
+    }
+
+    if ($DryRun) {
+        Write-Host "dry-run: 检测到可发布版本，但不会执行真实发布: slug=$slug version=$version"
+        $publishResults.Add([PSCustomObject]@{
+                slug    = $slug
+                version = $version
+                status  = "dry_run"
+                reason  = "publish_skipped_in_dry_run"
             })
         continue
     }
