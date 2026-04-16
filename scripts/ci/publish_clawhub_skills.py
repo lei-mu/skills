@@ -98,6 +98,9 @@ def main() -> None:
                 {
                     "slug": slug,
                     "version": version,
+                    "source": source,
+                    "name": name,
+                    "changelog": publish_changelog,
                     "status": "dry_run",
                     "reason": "publish_skipped_in_dry_run",
                 }
@@ -121,7 +124,7 @@ def main() -> None:
         if publish_changelog:
             command.extend(["--changelog", publish_changelog])
 
-        print(f"执行发布: slug={slug} version={version} source={source}")
+        print(f"执行发布: slug={slug} version={version} source={source} name={name} changelog={publish_changelog}")
         publish_result = run_command(command)
         if publish_result.returncode == 0:
             publish_results.append({"slug": slug, "version": version, "status": "published", "reason": ""})
