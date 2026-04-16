@@ -80,15 +80,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Checkout ClawHub CLI Source
+        uses: actions/checkout@v4
+        with:
+          repository: openclaw/clawhub
+          ref: main
+          path: .tools/clawhub-cli
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Install ClawHub CLI Dependencies
+        shell: bash
+        run: |
+          cd .tools/clawhub-cli
+          bun install --frozen-lockfile
 
       - name: Validate Skill Metadata
         shell: bash
@@ -101,6 +119,8 @@ jobs:
 
       - name: Publish Skill To ClawHub
         shell: bash
+        env:
+          CLAWHUB_CLI_PATH: .tools/clawhub-cli/cli.ts
         run: |
           python ./scripts/ci/publish_clawhub_skills.py \
             --config-path "clawhub/skills.publish.json" \
