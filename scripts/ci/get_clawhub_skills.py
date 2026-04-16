@@ -66,11 +66,15 @@ def parse_frontmatter(skill_file_path: str) -> dict:
             ]
 
     name = data.get("name", "")
+    slug = data.get("slug", "")
     version = data.get("version", "")
     description = data.get("description", "")
+    changelog = data.get("changelog", "")
 
     if not name:
         raise RuntimeError(f"SKILL.md frontmatter 缺少 name: {skill_file_path}")
+    if not slug:
+        raise RuntimeError(f"SKILL.md frontmatter 缺少 slug: {skill_file_path}")
     if not version:
         raise RuntimeError(f"SKILL.md frontmatter 缺少 version: {skill_file_path}")
     if not description:
@@ -82,8 +86,10 @@ def parse_frontmatter(skill_file_path: str) -> dict:
 
     return {
         "name": name,
+        "slug": slug,
         "version": version,
         "description": description,
+        "changelog": changelog,
         "tags": tags,
     }
 
@@ -106,6 +112,12 @@ def load_skills(config_path: str, skill_slug: str, expected_version: str) -> dic
         source = item.get("source", "").strip()
         if not source:
             raise RuntimeError(f"发布配置项缺少 source: {config_path}")
+        config_slug = item.get("slug", "").strip()
+        if not config_slug:
+            raise RuntimeError(f"发布配置项缺少 slug: {config_path}, source={source}")
+        display_name = item.get("name", "").strip()
+        if not display_name:
+            raise RuntimeError(f"发布配置项缺少 name: {config_path}, source={source}")
 
         skill_dir = Path(source)
         if not skill_dir.is_dir():
@@ -113,24 +125,18 @@ def load_skills(config_path: str, skill_slug: str, expected_version: str) -> dic
 
         skill_file = skill_dir / "SKILL.md"
         metadata = parse_frontmatter(str(skill_file))
-        skill_name = metadata["name"]
-        slug = (item.get("slug") or skill_name or skill_dir.name).strip()
-        display_name = (item.get("name") or skill_name).strip()
-
-        if item.get("slug") and slug != skill_name:
-            raise RuntimeError(
-                f"配置中的 slug 必须与 SKILL.md 的 name 一致: source={source}, slug={slug}, skillName={skill_name}"
-            )
 
         result_skills.append(
             {
-                "slug": slug,
+                "slug": config_slug,
                 "source": source.replace("\\", "/"),
                 "skillFile": str(skill_file).replace("\\", "/"),
-                "skillName": skill_name,
+                "skillName": metadata["name"],
+                "skillSlug": metadata["slug"],
                 "name": display_name,
                 "version": metadata["version"],
                 "description": metadata["description"],
+                "changelog": metadata["changelog"],
                 "tags": metadata["tags"],
             }
         )

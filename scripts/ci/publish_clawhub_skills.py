@@ -74,6 +74,8 @@ def main() -> None:
         version = skill["version"]
         source = skill["source"]
         name = skill["name"]
+        skill_changelog = skill.get("changelog", "")
+        publish_changelog = args.changelog or skill_changelog
 
         print(f"检查远端版本是否已存在: slug={slug} version={version}")
         inspect_result = run_command(
@@ -116,8 +118,8 @@ def main() -> None:
             "--version",
             version,
         ]
-        if args.changelog:
-            command.extend(["--changelog", args.changelog])
+        if publish_changelog:
+            command.extend(["--changelog", publish_changelog])
 
         print(f"执行发布: slug={slug} version={version} source={source}")
         publish_result = run_command(command)

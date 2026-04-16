@@ -3,6 +3,7 @@
     {
       "source": "skills/pushplus",
       "slug": "pushplus",
+      "name": "pushplus",
       "publish": true
     }
   ]
