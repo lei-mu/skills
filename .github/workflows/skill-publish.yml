@@ -68,6 +68,8 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+          echo "Resolved publish inputs: event=$event_name tag=$tag_name skill_slug=$resolved_skill_slug expected_version=$resolved_expected_version dry_run=$resolved_dry_run"
+
   publish:
     runs-on: ubuntu-latest
     needs:
@@ -102,6 +104,7 @@ jobs:
       - name: Publish Skill To ClawHub
         shell: bash
         run: |
+          echo "Start publish job: skill_slug=${{ needs.prepare.outputs.skill_slug }} expected_version=${{ needs.prepare.outputs.expected_version }} dry_run=${{ needs.prepare.outputs.dry_run }}"
           python ./scripts/ci/publish_clawhub_skills.py \
             --config-path "clawhub/skills.publish.json" \
             --skill-slug "${{ needs.prepare.outputs.skill_slug }}" \

@@ -77,6 +77,9 @@ def main() -> None:
         skill_changelog = skill.get("changelog", "")
         publish_changelog = args.changelog or skill_changelog
 
+        print(
+            f"准备处理 skill: slug={slug} source={source} name={name} version={version} dry_run={args.dry_run}"
+        )
         print(f"检查远端版本是否已存在: slug={slug} version={version}")
         inspect_result = run_command(
             ["npx", "--yes", "clawhub@latest", "inspect", "--version", version, slug],
@@ -111,7 +114,6 @@ def main() -> None:
             "npx",
             "--yes",
             "clawhub@latest",
-            "skill",
             "publish",
             source,
             "--slug",
@@ -124,7 +126,10 @@ def main() -> None:
         if publish_changelog:
             command.extend(["--changelog", publish_changelog])
 
-        print(f"执行发布: slug={slug} version={version} source={source} name={name} changelog={publish_changelog}")
+        print(
+            "执行发布命令参数: "
+            f"path={source} slug={slug} name={name} version={version} changelog={publish_changelog}"
+        )
         publish_result = run_command(command)
         if publish_result.returncode == 0:
             publish_results.append({"slug": slug, "version": version, "status": "published", "reason": ""})
