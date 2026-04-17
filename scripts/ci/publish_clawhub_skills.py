@@ -6,13 +6,6 @@ import sys
 from pathlib import Path
 
 
-def build_clawhub_command(*args: str) -> list[str]:
-    cli_path = os.environ.get("CLAWHUB_CLI_PATH", "").strip()
-    if cli_path:
-        return ["bun", cli_path, *args]
-    return ["npx", "--yes", "clawhub@latest", *args]
-
-
 def run_command(command: list[str], capture_output: bool = False) -> subprocess.CompletedProcess:
     return subprocess.run(
         command,
@@ -66,7 +59,9 @@ def main() -> None:
         raise RuntimeError("没有可发布的 skill。")
 
     print("开始登录 ClawHub CLI...")
-    login_result = run_command(build_clawhub_command("login", "--token", clawhub_token, "--no-browser"))
+    login_result = run_command(
+        ["npx", "--yes", "clawhub@latest", "login", "--token", clawhub_token, "--no-browser"]
+    )
     if login_result.returncode != 0:
         raise RuntimeError("ClawHub CLI 登录失败。")
 
@@ -84,7 +79,7 @@ def main() -> None:
 
         print(f"检查远端版本是否已存在: slug={slug} version={version}")
         inspect_result = run_command(
-            build_clawhub_command("inspect", "--version", version, slug),
+            ["npx", "--yes", "clawhub@latest", "inspect", "--version", version, slug],
             capture_output=True,
         )
         inspect_output = f"{inspect_result.stdout}{inspect_result.stderr}"
@@ -113,7 +108,9 @@ def main() -> None:
             continue
 
         command = [
-            *build_clawhub_command(
+            "npx",
+            "--yes",
+            "clawhub@latest",
             "skill",
             "publish",
             source,
@@ -123,7 +120,6 @@ def main() -> None:
             name,
             "--version",
             version,
-            ),
         ]
         if publish_changelog:
             command.extend(["--changelog", publish_changelog])
