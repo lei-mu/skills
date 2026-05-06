@@ -1,5 +1,7 @@
 # PushPlus API 参考文档
 
+> 对应 PushPlus API v1.13 (2026-03-27)，新增 clawbot 渠道
+
 ## 接口地址
 
 ```
@@ -49,7 +51,10 @@ https://www.pushplus.plus/send
 | cp | 免费 | 企业微信应用 |
 | mail | 免费 | 邮件 |
 | sms | 收费 | 短信（10 积分/条，0.1 元） |
-| extension | 免费 | 浏览器插件 |
+| voice | 收费 | 语音（30 积分/条，0.3 元） |
+| extension | 免费 | 浏览器插件、桌面应用程序 |
+| app | 免费 | App 渠道（支持安卓、鸿蒙、iOS） |
+| clawbot | 免费 | 微信 ClawBot |
 
 ## 返回码
 

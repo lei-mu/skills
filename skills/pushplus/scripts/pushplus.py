@@ -4,6 +4,7 @@ PushPlus 消息推送脚本
 支持多种推送渠道：微信、邮件、短信、企业微信、钉钉、飞书等
 
 更新日志:
+- 2026-05: 新增 clawbot (微信ClawBot) 渠道
 - 2025-01: 新增多渠道发送接口，webhook参数改为option（兼容旧参数），新增voice/app/extension渠道
 """
 
@@ -23,7 +24,7 @@ API_BATCH_URL = "https://www.pushplus.plus/batchSend"
 # 环境变量名
 ENV_TOKEN = "PUSHPLUS_TOKEN"
 VALID_TEMPLATES = {"html", "txt", "json", "markdown", "cloudMonitor", "jenkins", "route", "pay"}
-VALID_CHANNELS = {"wechat", "webhook", "cp", "mail", "sms", "extension", "voice", "app"}
+VALID_CHANNELS = {"wechat", "webhook", "cp", "mail", "sms", "extension", "voice", "app", "clawbot"}
 
 
 def get_token_from_env() -> Optional[str]:
@@ -102,7 +103,7 @@ def send_message(
         title: 消息标题（可选）
         topic: 群组编码，用于一对多消息（可选）
         template: 消息模板，默认 html，可选 txt, json, markdown, cloudMonitor, jenkins, route, pay
-        channel: 推送渠道，默认 wechat，可选 webhook, cp, mail, sms, extension, voice, app
+        channel: 推送渠道，默认 wechat，可选 webhook, cp, mail, sms, extension, voice, app, clawbot
         webhook: Webhook 编码（已废弃，请使用 option 参数，但为兼容保留）
         option: 渠道配置参数（原 webhook 参数，多个渠道用逗号分隔）
         callback_url: 回调地址（可选）
@@ -599,7 +600,7 @@ def main():
                         choices=['html', 'txt', 'json', 'markdown', 'cloudMonitor', 'jenkins', 'route', 'pay'],
                         help='消息模板（默认 html）')
     parser.add_argument('--channel', default='wechat',
-                        choices=['wechat', 'webhook', 'cp', 'mail', 'sms', 'extension', 'voice', 'app'],
+                        choices=['wechat', 'webhook', 'cp', 'mail', 'sms', 'extension', 'voice', 'app', 'clawbot'],
                         help='推送渠道（默认 wechat）')
     parser.add_argument('--channels', default='',
                         help='多渠道发送，逗号分隔，如 "wechat,webhook,extension"')

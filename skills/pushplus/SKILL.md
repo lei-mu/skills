@@ -3,10 +3,10 @@ name: pushplus
 slug: pushplus
 description: PushPlus(推送加)消息推送服务，支持微信、邮件、短信、企业微信、钉钉、飞书等多种渠道。使用场景：(1) 系统监控告警通知 (2) 定时任务执行结果通知 (3) 业务异常告警 (4) 日常消息提醒。当用户需要发送推送消息、配置消息通知、查询推送结果时使用此 Skill。
 author: luch
-version: 1.0.2
+version: 1.1.0
 category: notification
-changelog: 更新skill.md 文件
-tags: [pushplus, notification, wechat, email, webhook, dingtalk, feishu, sms]
+changelog: 升级API至v1.13，新增clawbot渠道和36个OpenAPI接口（群组用户/渠道配置/ClawBot/功能设置/好友/预处理）
+tags: [pushplus, notification, wechat, email, webhook, dingtalk, feishu, sms, clawbot]
 env:
   - name: PUSHPLUS_TOKEN
     description: PushPlus 用户 Token/消息 Token（用于基础推送功能）
@@ -144,23 +144,36 @@ result = send_email_message(
 
 #### 默认安全能力
 
-- 发送普通消息
-- 发送多渠道消息
-- 查询消息发送结果
-- 查询用户信息、请求次数等只读信息
+- 发送普通消息、多渠道消息
+- 查询消息发送结果、消息列表、消息详情
+- 查询用户信息、请求次数、解封时间等只读信息
+- 查询群组列表、群组详情、群组用户列表、群组二维码
+- 查询消息 Token 列表、下拉选择列表
+- 查询渠道配置（webhook/公众号/企业微信/邮箱列表及详情）
+- 查询默认配置列表及详情
+- 查询好友列表、个人二维码
+- 查询预处理信息列表及详情
+- ClawBot 二维码获取、扫码状态查询、绑定详情、消息获取
 
 #### 谨慎能力
 
-- 新增消息 Token
-- 修改消息 Token
-- 新增群组
+- 新增/修改消息 Token
+- 新增/修改群组、上下架积分群组、修改订阅人备注
+- 新增/修改 webhook 渠道
+- 新增/修改默认配置
+- 新增/修改预处理信息
+- 修改接收消息限制、开启/关闭发送、修改打开消息方式、修改插件转发
+- 修改好友备注
+- 测试预处理代码
 
 #### 高风险能力
 
-- 删除消息
-- 删除消息 Token
-- 删除群组
-- 退出群组
+- 删除消息、删除消息 Token
+- 删除群组、退出群组、删除群组内用户
+- 删除默认配置
+- 删除好友
+- 删除预处理信息
+- 解绑 ClawBot
 
 对高风险能力，建议仅在用户明确要求时调用。
 
@@ -177,7 +190,7 @@ python3 scripts/pushplus.py [选项]
   --title         消息标题
   --topic         群组编码（一对多消息）
   --template      消息模板 (html/txt/json/markdown/cloudMonitor/jenkins/route/pay)
-  --channel       推送渠道 (wechat/webhook/cp/mail/sms/extension/voice/app)
+  --channel       推送渠道 (wechat/webhook/cp/mail/sms/extension/voice/app/clawbot)
   --channels      多渠道发送，逗号分隔，如 "wechat,webhook,extension"
   --webhook       Webhook 编码（已废弃，请使用 --option）
   --option        渠道配置参数（原 webhook 参数，多个渠道用逗号分隔）
@@ -497,6 +510,7 @@ send_template_message(
 | voice | 收费 | 语音（30 积分/条，0.3 元） |
 | extension | 免费 | 浏览器插件、桌面应用程序 |
 | app | 免费 | App 渠道（支持安卓、鸿蒙、iOS） |
+| clawbot | 免费 | 微信 ClawBot |
 
 ### 返回码
 
@@ -544,6 +558,7 @@ send_template_message(
    - `list_messages()` - 消息列表
    - `get_message_result()` - 查询发送结果
    - `delete_message()` - 删除消息
+   - `get_message_detail()` - 消息详情（HTML）
 
 3. **用户接口**
    - `get_user_token()` - 获取用户 Token
@@ -553,17 +568,56 @@ send_template_message(
 
 4. **消息 Token 接口**
    - `list_tokens()` - 消息 Token 列表
+   - `select_token_list()` - Token 下拉选择列表
    - `add_token()` - 新增消息 Token
    - `edit_token()` - 修改消息 Token
    - `delete_token()` - 删除消息 Token
 
 5. **群组接口**
    - `list_topics()` - 群组列表
-   - `get_topic_detail()` - 群组详情
+   - `get_topic_detail()` - 我创建的群组详情
+   - `get_join_topic_detail()` - 我加入的群组详情
    - `add_topic()` - 新增群组
+   - `edit_topic()` - 修改群组
    - `get_topic_qrcode()` - 群组二维码
    - `exit_topic()` - 退出群组
    - `delete_topic()` - 删除群组
+   - `set_topic_is_open()` - 上下架积分群组
+
+6. **群组用户接口**
+   - `list_topic_subscribers()` - 群组内用户列表
+   - `delete_topic_user()` - 删除群组内用户
+   - `edit_topic_user_remark()` - 修改订阅人备注
+
+7. **渠道配置接口**
+   - `list_webhooks()` / `get_webhook_detail()` / `add_webhook()` / `edit_webhook()` - Webhook CRUD
+   - `list_mp_channels()` - 微信公众号渠道列表
+   - `list_cp_channels()` - 企业微信应用渠道列表
+   - `list_mail_channels()` / `get_mail_channel_detail()` - 邮箱渠道列表/详情
+
+8. **微信 ClawBot 接口**
+   - `get_clawbot_qrcode()` / `get_clawbot_qrcode_status()` - 二维码获取/扫码查询
+   - `get_clawbot_bind_info()` / `unbind_clawbot()` - 绑定详情/解绑
+   - `get_clawbot_messages()` - 获取发送消息
+
+9. **功能设置接口**
+   - `list_default_settings()` / `get_default_setting_detail()` - 默认配置列表/详情
+   - `add_default_setting()` / `edit_default_setting()` / `delete_default_setting()` - 默认配置 CRUD
+   - `set_receive_limit()` - 接收消息限制
+   - `set_send_enabled()` - 发送消息开关
+   - `set_open_message_type()` - 消息打开方式
+   - `set_extension_forward()` - 插件渠道转发
+
+10. **好友功能接口**
+    - `get_personal_qrcode()` - 个人二维码
+    - `list_friends()` - 好友列表
+    - `delete_friend()` - 删除好友
+    - `edit_friend_remark()` - 修改好友备注
+
+11. **预处理信息接口**
+    - `list_pre_info()` / `get_pre_info_detail()` - 预处理列表/详情
+    - `add_pre_info()` / `edit_pre_info()` / `delete_pre_info()` - 预处理 CRUD
+    - `test_pre_code()` - 测试预处理代码
 
 ### OpenAPI 使用示例
 
